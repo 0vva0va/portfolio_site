@@ -1,0 +1,1342 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="color-scheme" content="dark" />
+        <meta name="theme-color" content="#000000" />
+        <meta name="description" content="Systems & interfaces — portfolio and writing." />
+        <link rel="preconnect" href="https://unpkg.com" crossorigin />
+        <title>Your Name</title>
+        <style>
+            :root {
+                --bg: #000000;
+                --text: #ffffff;
+                --muted: #b8b8b8;
+                --dim: #333333;
+                --faint: #787878;
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            ::selection {
+                background: var(--faint);
+                color: var(--bg);
+            }
+
+            html {
+                scroll-behavior: auto;
+                scrollbar-width: thin;
+                scrollbar-color: var(--dim) var(--bg);
+            }
+
+            body {
+                background: var(--bg);
+                color: var(--text);
+                font-family:
+                    "SFMono-Regular", Consolas, "Liberation Mono", Menlo,
+                    Courier, monospace;
+                font-size: 15px;
+                line-height: 1.6;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                overflow-x: hidden;
+            }
+
+            body.home-active {
+                overflow: hidden;
+            }
+
+            /* The viewport scrollbar is painted on the documentElement
+               (<html>), not <body> — even though body's overflow is what
+               gets propagated to the viewport. Targeting body here is a
+               no-op in Chrome/Safari/Edge, so we style html instead. */
+            html::-webkit-scrollbar {
+                width: 8px;
+            }
+            html::-webkit-scrollbar-track {
+                background: var(--bg);
+            }
+            html::-webkit-scrollbar-thumb {
+                background: var(--dim);
+                border: 2px solid var(--bg);
+                border-radius: 4px;
+            }
+            html::-webkit-scrollbar-thumb:hover {
+                background: var(--faint);
+            }
+
+            a, button, [onclick], .back-link {
+                cursor: pointer;
+            }
+
+            a:focus-visible,
+            button:focus-visible,
+            [onclick]:focus-visible {
+                outline: 1px dashed var(--faint);
+                outline-offset: 3px;
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .view {
+                    animation: none;
+                }
+                .retro-btn,
+                .project-item,
+                .writing-item,
+                .back-link,
+                .btn-arrow,
+                #bg-dimmer {
+                    transition: none !important;
+                }
+            }
+
+            /* ── Grain Overlay ── */
+            #grain-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 9999;
+                pointer-events: none;
+                opacity: 0.04;
+            }
+
+            /* ── Background Canvas ── */
+            #bg-canvas-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: -2;
+                pointer-events: none;
+            }
+            #bg-canvas-container canvas {
+                display: block;
+                width: 100%;
+                height: 100%;
+            }
+
+            /* ── Background Dimmer ── */
+            #bg-dimmer {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: -1;
+                background: rgba(0, 0, 0, 0);
+                transition: background 0.6s ease;
+                pointer-events: none;
+            }
+            #bg-dimmer.dim {
+                background: rgba(0, 0, 0, 0.65);
+            }
+
+            /* ── Main Layout ── */
+            main {
+                position: relative;
+                z-index: 1;
+                max-width: 680px;
+                margin: 0 auto;
+                padding: 32px 24px;
+                min-height: 100vh;
+            }
+
+            .view {
+                display: none;
+                animation: fadeIn 0.25s ease;
+            }
+            .view.active {
+                display: block;
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(6px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* ── Integrated Landing Page ── */
+            #home-view {
+                min-height: calc(100vh - 64px);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+            #home-view:not(.active) {
+                display: none !important;
+                pointer-events: none !important;
+            }
+
+            .home-hero {
+                width: 100%;
+                max-width: 440px;
+                background: transparent;
+                text-align: left;
+            }
+            .home-title {
+                font-size: clamp(28px, 5.5vw, 40px);
+                font-weight: 400;
+                letter-spacing: 0.15em;
+                text-transform: uppercase;
+                margin-bottom: 6px;
+                color: var(--text);
+            }
+            .home-subtitle {
+                font-size: 13px;
+                color: var(--faint);
+                letter-spacing: 0.1em;
+                margin-bottom: 40px;
+            }
+            .home-nav {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                width: 100%;
+            }
+            .retro-btn {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+                background: transparent;
+                color: var(--muted);
+                border: none;
+                border-bottom: 1px dashed var(--dim);
+                font-family: inherit;
+                font-size: 14px;
+                letter-spacing: 0.12em;
+                padding: 14px 4px;
+                text-transform: uppercase;
+                text-decoration: none;
+                transition: all 0.2s ease;
+            }
+            .retro-btn:hover {
+                color: var(--text);
+                border-bottom-style: solid;
+                border-bottom-color: var(--text);
+                padding-left: 12px;
+            }
+            .retro-btn .btn-arrow {
+                opacity: 0.4;
+                transition: transform 0.2s ease, opacity 0.2s ease;
+            }
+            .retro-btn:hover .btn-arrow {
+                opacity: 1;
+                transform: translateX(4px);
+            }
+
+            /* ── Sub-view Top Header Links ── */
+            .sub-top-bar {
+                margin-bottom: 24px;
+            }
+
+            /* ── About ── */
+            .about-section h2 {
+                font-size: clamp(24px, 3.8vw, 34px);
+                font-weight: 400;
+                margin-bottom: 24px;
+                letter-spacing: -0.02em;
+            }
+            .about-section p {
+                color: var(--muted);
+                max-width: 540px;
+                margin-bottom: 1.2em;
+                line-height: 1.65;
+                font-size: 14px;
+            }
+            .about-section a {
+                color: var(--text);
+                text-decoration: none;
+                border-bottom: 1px solid var(--faint);
+                transition: border-color 0.2s ease;
+            }
+            .about-section a:hover {
+                border-bottom-color: var(--text);
+            }
+
+            /* ── Projects List ── */
+            .projects-section h2 {
+                font-size: clamp(24px, 3.8vw, 34px);
+                font-weight: 400;
+                margin-bottom: 20px;
+                letter-spacing: -0.02em;
+            }
+            .projects-list {
+                list-style: none;
+            }
+            .project-item {
+                border-bottom: 1px solid var(--dim);
+                padding: 16px 0;
+                transition: padding-left 0.2s ease;
+            }
+            .project-item:hover {
+                padding-left: 8px;
+            }
+            .project-item a {
+                color: var(--text);
+                text-decoration: none;
+                font-size: 15px;
+                display: block;
+                margin-bottom: 4px;
+            }
+            .project-item a:hover {
+                text-decoration: underline;
+            }
+            .project-meta {
+                color: var(--faint);
+                font-size: 12px;
+            }
+            .project-excerpt {
+                color: var(--muted);
+                font-size: 13px;
+                margin-top: 6px;
+                max-width: 500px;
+                line-height: 1.55;
+            }
+            .entry-thumb {
+                display: block;
+                width: 100%;
+                max-width: 320px;
+                max-height: 160px;
+                object-fit: cover;
+                margin-bottom: 10px;
+                border: 1px solid var(--dim);
+            }
+
+            /* ── Paper Sheet Overlay Styles (Dynamic Size & Flat Slab Scrollbar) ── */
+            .paper-sheet {
+                background: #18181c;
+                color: #dedad2;
+                padding: 36px 36px 36px 40px;
+                border-radius: 4px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow:
+                    0 20px 40px rgba(0, 0, 0, 0.75),
+                    0 4px 12px rgba(0, 0, 0, 0.5),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+                margin-top: 8px;
+                
+                /* Fits text naturally up to max height limit */
+                height: auto;
+                max-height: calc(100vh - 80px);
+                overflow-y: auto;
+
+                /* Firefox Thin Scrollbar */
+                scrollbar-width: thin;
+                scrollbar-color: #484856 #111114;
+            }
+
+            /* WebKit Custom Scrollbar (Hide arrows & flat slab thumb) */
+            .paper-sheet::-webkit-scrollbar {
+                width: 7px;
+            }
+            .paper-sheet::-webkit-scrollbar-button {
+                display: none;
+                height: 0;
+                width: 0;
+            }
+            .paper-sheet::-webkit-scrollbar-track {
+                background: #111114;
+                border-radius: 0;
+            }
+            .paper-sheet::-webkit-scrollbar-thumb {
+                background: #484856;
+                border-radius: 0;
+            }
+            .paper-sheet::-webkit-scrollbar-thumb:hover {
+                background: #6e6e80;
+            }
+
+            .paper-sheet h2 {
+                color: #f5f2eb;
+            }
+            .paper-sheet .project-detail-year,
+            .paper-sheet .writing-detail-meta {
+                color: #a5a199;
+            }
+            .paper-sheet .project-detail-line,
+            .paper-sheet .writing-detail-line {
+                background: #2e2e36;
+            }
+            .paper-sheet .project-detail-desc,
+            .paper-sheet .writing-detail-body {
+                color: #dedad2;
+            }
+            .paper-sheet .project-detail-desc h3,
+            .paper-sheet .writing-detail-body h3 {
+                color: #f5f2eb;
+                font-size: 16px;
+                font-weight: 500;
+                margin: 24px 0 10px 0;
+            }
+            .paper-sheet .project-detail-tech span,
+            .paper-sheet .writing-detail-tags span {
+                border-color: #3b3b45;
+                color: #b8b4ac;
+                background: #222226;
+            }
+            .paper-sheet .project-detail-links a {
+                color: #f5f2eb;
+                border-bottom-color: #777782;
+            }
+            .paper-sheet .project-detail-links a:hover {
+                border-bottom-color: #f5f2eb;
+            }
+            .paper-sheet .back-link {
+                color: #a5a199;
+                margin-bottom: 16px;
+            }
+            .paper-sheet .back-link:hover {
+                color: #f5f2eb;
+            }
+
+            /* ── Detail Standard Styling ── */
+            .project-detail h2,
+            .writing-detail h2 {
+                font-size: clamp(26px, 4.5vw, 40px);
+                font-weight: 400;
+                line-height: 1.2;
+                letter-spacing: -0.02em;
+                margin-bottom: 6px;
+            }
+            .project-detail-year,
+            .writing-detail-meta {
+                font-size: 14px;
+                margin-bottom: 20px;
+            }
+            .project-detail-line,
+            .writing-detail-line {
+                width: 100%;
+                height: 1px;
+                margin-bottom: 24px;
+            }
+            .project-detail-desc,
+            .writing-detail-body {
+                max-width: 580px;
+                line-height: 1.7;
+                margin-bottom: 24px;
+                font-size: 14px;
+            }
+            .writing-detail-body p {
+                margin-bottom: 1.2em;
+            }
+            .project-detail-desc p,
+            .writing-detail-body p {
+                margin-bottom: 1.2em;
+            }
+            .project-detail-desc h3,
+            .writing-detail-body h3 {
+                font-size: 16px;
+                font-weight: 500;
+                margin: 24px 0 10px 0;
+            }
+            .project-detail-desc ul,
+            .project-detail-desc ol,
+            .writing-detail-body ul,
+            .writing-detail-body ol {
+                margin: 0 0 1.2em 1.4em;
+            }
+            .project-detail-desc li,
+            .writing-detail-body li {
+                margin-bottom: 0.4em;
+            }
+            .project-detail-desc blockquote,
+            .writing-detail-body blockquote {
+                border-left: 2px solid var(--dim);
+                padding-left: 14px;
+                margin: 0 0 1.2em 0;
+                color: var(--faint);
+            }
+            .project-detail-desc code,
+            .writing-detail-body code {
+                font-family: inherit;
+                background: var(--dim);
+                padding: 2px 5px;
+                font-size: 0.9em;
+            }
+            .project-detail-desc pre,
+            .writing-detail-body pre {
+                background: var(--dim);
+                padding: 12px 14px;
+                overflow-x: auto;
+                margin-bottom: 1.2em;
+            }
+            .project-detail-desc pre code,
+            .writing-detail-body pre code {
+                background: none;
+                padding: 0;
+            }
+            .project-detail-desc img,
+            .project-detail-desc video,
+            .writing-detail-body img,
+            .writing-detail-body video {
+                max-width: 100%;
+                height: auto;
+                display: block;
+                margin: 1.2em 0;
+                border: 1px solid var(--dim);
+            }
+            .project-detail-desc figure,
+            .writing-detail-body figure {
+                margin: 1.2em 0;
+            }
+            .project-detail-desc figcaption,
+            .writing-detail-body figcaption {
+                font-size: 12px;
+                color: var(--faint);
+                margin-top: 6px;
+            }
+            .project-detail-desc a,
+            .writing-detail-body a {
+                color: inherit;
+            }
+            .project-detail-tech,
+            .writing-detail-tags {
+                margin-bottom: 24px;
+            }
+            .project-detail-tech span,
+            .writing-detail-tags span {
+                display: inline-block;
+                border: 1px solid var(--dim);
+                padding: 4px 9px;
+                margin-right: 6px;
+                margin-bottom: 6px;
+                font-size: 12px;
+            }
+            .project-detail-links a {
+                display: inline-block;
+                text-decoration: none;
+                padding-bottom: 2px;
+                margin-right: 20px;
+                font-size: 14px;
+                transition: border-color 0.2s ease;
+            }
+            .back-link {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                text-decoration: none;
+                font-size: 13px;
+                color: var(--muted);
+                transition: color 0.2s ease;
+            }
+            .back-link:hover {
+                color: var(--text);
+            }
+
+            /* ── Writing List ── */
+            .writing-section h2 {
+                font-size: clamp(24px, 3.8vw, 34px);
+                font-weight: 400;
+                margin-bottom: 20px;
+                letter-spacing: -0.02em;
+            }
+            .writing-list {
+                list-style: none;
+            }
+            .writing-item {
+                border-bottom: 1px solid var(--dim);
+                padding: 16px 0;
+                transition: padding-left 0.2s ease;
+            }
+            .writing-item:hover {
+                padding-left: 8px;
+            }
+            .writing-item a {
+                color: var(--text);
+                text-decoration: none;
+                font-size: 15px;
+                display: block;
+                margin-bottom: 4px;
+            }
+            .writing-item a:hover {
+                text-decoration: underline;
+            }
+            .writing-meta {
+                color: var(--faint);
+                font-size: 12px;
+            }
+            .writing-excerpt {
+                color: var(--muted);
+                font-size: 13px;
+                margin-top: 6px;
+                max-width: 500px;
+                line-height: 1.55;
+            }
+
+            .hidden {
+                display: none !important;
+            }
+
+            @media (max-width: 600px) {
+                main {
+                    padding: 20px 16px;
+                }
+                .paper-sheet {
+                    padding: 24px 20px;
+                    max-height: calc(100vh - 60px);
+                }
+            }
+        </style>
+    </head>
+    <body class="home-active">
+        <noscript>
+            <p style="padding: 24px; font-family: monospace">
+                This site needs JavaScript enabled to run.
+            </p>
+        </noscript>
+        <canvas id="grain-overlay"></canvas>
+        <div id="bg-canvas-container"></div>
+        <div id="bg-dimmer"></div>
+
+        <main>
+            <!-- Landing Page View -->
+            <div id="home-view" class="view active">
+                <div class="home-hero">
+                    <h1 class="home-title">Your Name</h1>
+                    <p class="home-subtitle">// systems & interfaces</p>
+                    <nav class="home-nav">
+                        <button class="retro-btn" onclick="navigateTo('about')">
+                            <span>01. ABOUT</span>
+                            <span class="btn-arrow">→</span>
+                        </button>
+                        <button class="retro-btn" onclick="navigateTo('projects')">
+                            <span>02. PROJECTS</span>
+                            <span class="btn-arrow">→</span>
+                        </button>
+                        <button class="retro-btn" onclick="navigateTo('writing')">
+                            <span>03. WRITING</span>
+                            <span class="btn-arrow">→</span>
+                        </button>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- About View -->
+            <div id="about-view" class="view">
+                <div class="sub-top-bar">
+                    <a class="back-link" tabindex="0" role="button" onclick="navigateTo('home')">← home</a>
+                </div>
+                <section class="about-section">
+                    <h2>About</h2>
+                    <p>
+                        I build software that is fast, reliable, and minimal.
+                        Focused on systems programming, developer tools, and
+                        interfaces that stay out of the way.
+                    </p>
+                    <p>
+                        Previously at [Company] and [Another Company]. I care
+                        about performance, correctness, and the craft of clean,
+                        maintainable code.
+                    </p>
+                    <p>
+                        <a href="mailto:you@example.com">you@example.com</a> —
+                        <a href="https://github.com/username"
+                            >github.com/username</a
+                        >
+                    </p>
+                </section>
+            </div>
+
+            <!-- Projects View -->
+            <div id="projects-view" class="view">
+                <div class="sub-top-bar" id="projects-top-bar">
+                    <a class="back-link" tabindex="0" role="button" onclick="navigateTo('home')">← home</a>
+                </div>
+                <section class="projects-section" id="projects-list">
+                    <h2>Projects</h2>
+                    <ul class="projects-list" id="projects-list-ul"></ul>
+                </section>
+                <div id="project-detail" class="project-detail paper-sheet hidden">
+                    <a class="back-link" tabindex="0" role="button" onclick="showProjectsList()"
+                        >← Projects</a
+                    >
+                    <h2 id="pd-title"></h2>
+                    <div class="project-detail-year" id="pd-year"></div>
+                    <div class="project-detail-line"></div>
+                    <div class="project-detail-desc" id="pd-desc"></div>
+                    <div class="project-detail-tech" id="pd-tech"></div>
+                    <div class="project-detail-links" id="pd-links"></div>
+                </div>
+            </div>
+
+            <!-- Writing View -->
+            <div id="writing-view" class="view">
+                <div class="sub-top-bar" id="writing-top-bar">
+                    <a class="back-link" tabindex="0" role="button" onclick="navigateTo('home')">← home</a>
+                </div>
+                <section class="writing-section" id="writing-list">
+                    <h2>Writing</h2>
+                    <ul class="writing-list" id="writing-list-ul"></ul>
+                </section>
+                <div id="writing-detail" class="writing-detail paper-sheet hidden">
+                    <a class="back-link" tabindex="0" role="button" onclick="showWritingList()"
+                        >← All Writing</a
+                    >
+                    <h2 id="wd-title"></h2>
+                    <div class="writing-detail-meta" id="wd-meta"></div>
+                    <div class="writing-detail-line"></div>
+                    <div class="writing-detail-body" id="wd-body"></div>
+                    <div class="writing-detail-tags" id="wd-tags"></div>
+                </div>
+            </div>
+        </main>
+
+        <script type="importmap">
+            {
+                "imports": {
+                    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                    "marked": "https://unpkg.com/marked@11.1.1/lib/marked.esm.js"
+                }
+            }
+        </script>
+
+        <script type="module">
+            import * as THREE from "three";
+            import { marked } from "marked";
+            marked.setOptions({ breaks: true });
+
+            const bgDimmer = document.getElementById("bg-dimmer");
+
+            /* ── Keyboard activation for link-styled buttons ── */
+            document.addEventListener("keydown", (e) => {
+                if (e.key !== "Enter" && e.key !== " ") return;
+                const target = e.target;
+                if (target.matches('[role="button"]')) {
+                    e.preventDefault();
+                    target.click();
+                }
+            });
+
+            const prefersReducedMotion = window.matchMedia(
+                "(prefers-reduced-motion: reduce)",
+            ).matches;
+
+            /* ── Grain Overlay ── */
+            const grainCanvas = document.getElementById("grain-overlay");
+            const gCtx = grainCanvas.getContext("2d");
+
+            // Static grain: rendered once at full device-pixel resolution
+            // (and again on resize), never animated. Using devicePixelRatio
+            // keeps each grain speck mapped to a physical pixel — finer and
+            // crisper on high-DPI screens — with no per-frame cost since it
+            // only ever renders on load/resize.
+            const grainDPR = Math.min(window.devicePixelRatio || 1, 3);
+
+            function resizeGrain() {
+                grainCanvas.width = Math.round(window.innerWidth * grainDPR);
+                grainCanvas.height = Math.round(window.innerHeight * grainDPR);
+                renderGrainFrame();
+            }
+
+            function renderGrainFrame() {
+                const w = grainCanvas.width;
+                const h = grainCanvas.height;
+                const imgData = gCtx.createImageData(w, h);
+                const data = imgData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    const v = Math.random() * 255;
+                    data[i] = v;
+                    data[i + 1] = v;
+                    data[i + 2] = v;
+                    data[i + 3] = 255;
+                }
+                gCtx.putImageData(imgData, 0, 0);
+            }
+
+            resizeGrain();
+
+            let grainResizeRAF = null;
+            window.addEventListener("resize", () => {
+                if (grainResizeRAF !== null) return;
+                grainResizeRAF = requestAnimationFrame(() => {
+                    grainResizeRAF = null;
+                    resizeGrain();
+                });
+            });
+
+            /* ── Audio Context Initializer ── */
+            let audioCtx = null;
+
+            function initAudio() {
+                if (!audioCtx) {
+                    audioCtx = new (
+                        window.AudioContext || window.webkitAudioContext
+                    )();
+                }
+                if (audioCtx.state === "suspended") {
+                    audioCtx.resume();
+                }
+            }
+
+            document.addEventListener("click", initAudio, { once: true });
+            document.addEventListener("keydown", initAudio, { once: true });
+
+            /* ── Dithered Background Shader ── */
+            const container = document.getElementById("bg-canvas-container");
+            const scene = new THREE.Scene();
+            const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+            const geometry = new THREE.PlaneGeometry(2, 2);
+
+            const vertexShader = `void main() { gl_Position = vec4(position, 1.0); }`;
+
+            const fragmentShader = `
+      uniform float u_time;
+      uniform vec2 u_resolution;
+
+      float hash(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+      }
+
+      float noise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        float a = hash(i);
+        float b = hash(i + vec2(1.0, 0.0));
+        float c = hash(i + vec2(0.0, 1.0));
+        float d = hash(i + vec2(1.0, 1.0));
+        return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+      }
+
+      float fbm(vec2 p) {
+        float v = 0.0, a = 0.5;
+        for (int i = 0; i < 5; i++) {
+          v += a * noise(p);
+          p *= 2.0;
+          a *= 0.5;
+        }
+        return v;
+      }
+
+      float warp(vec2 p, float t) {
+        vec2 q = vec2(
+          fbm(p + vec2(0.0, 0.0) + t * 0.08),
+          fbm(p + vec2(5.2, 1.3) + t * 0.06)
+        );
+        vec2 r = vec2(
+          fbm(p + 3.0 * q + vec2(t * 0.05, t * 0.04)),
+          fbm(p + 3.0 * q + vec2(1.7, 9.2) + t * 0.03)
+        );
+        return fbm(p + 2.0 * r);
+      }
+
+      float bayer4x4(vec2 coord) {
+        int x = int(mod(coord.x, 4.0));
+        int y = int(mod(coord.y, 4.0));
+        int index = x + y * 4;
+        if (index == 0) return 0.0;
+        if (index == 1) return 0.5;
+        if (index == 2) return 0.125;
+        if (index == 3) return 0.625;
+        if (index == 4) return 0.75;
+        if (index == 5) return 0.25;
+        if (index == 6) return 0.875;
+        if (index == 7) return 0.375;
+        if (index == 8) return 0.1875;
+        if (index == 9) return 0.6875;
+        if (index == 10) return 0.0625;
+        if (index == 11) return 0.5625;
+        if (index == 12) return 0.9375;
+        if (index == 13) return 0.4375;
+        if (index == 14) return 0.8125;
+        if (index == 15) return 0.3125;
+        return 0.0;
+      }
+
+      void main() {
+        vec2 uv = gl_FragCoord.xy / u_resolution;
+        float t = u_time;
+        vec2 p = uv * 2.5;
+        float water = warp(p, t);
+        water += sin(uv.x * 6.0 + t * 0.4) * 0.04;
+        water += sin(uv.y * 5.0 - t * 0.3) * 0.04;
+        water += sin((uv.x + uv.y) * 4.0 + t * 0.2) * 0.03;
+        water = smoothstep(0.25, 0.75, water);
+        
+        water = water * 0.4 + 0.1;
+        
+        float threshold = bayer4x4(gl_FragCoord.xy);
+        float dithered = water + (threshold - 0.5) * 0.12;
+        float levels = 5.0;
+        float quantized = floor(dithered * (levels - 1.0) + 0.5) / (levels - 1.0);
+        quantized = clamp(quantized, 0.0, 1.0);
+        
+        gl_FragColor = vec4(vec3(quantized * 0.55), 1.0);
+      }
+    `;
+
+            const material = new THREE.ShaderMaterial({
+                vertexShader: vertexShader,
+                fragmentShader: fragmentShader,
+                uniforms: {
+                    u_time: { value: 0.0 },
+                    u_resolution: {
+                        value: new THREE.Vector2(
+                            window.innerWidth,
+                            window.innerHeight,
+                        ),
+                    },
+                },
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+            scene.add(mesh);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: false });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            const clock = new THREE.Clock();
+            let sceneRAF = null;
+
+            function animate() {
+                sceneRAF = requestAnimationFrame(animate);
+                material.uniforms.u_time.value = clock.getElapsedTime();
+                renderer.render(scene, camera);
+            }
+
+            function startScene() {
+                if (sceneRAF === null) {
+                    clock.start();
+                    animate();
+                }
+            }
+            function stopScene() {
+                if (sceneRAF !== null) {
+                    cancelAnimationFrame(sceneRAF);
+                    sceneRAF = null;
+                    clock.stop();
+                }
+            }
+
+            if (prefersReducedMotion) {
+                // Render a single static frame — no continuous animation.
+                renderer.render(scene, camera);
+            } else {
+                startScene();
+                document.addEventListener("visibilitychange", () => {
+                    if (document.hidden) stopScene();
+                    else startScene();
+                });
+            }
+
+            let resizeRAF = null;
+            window.addEventListener("resize", () => {
+                if (resizeRAF !== null) return;
+                resizeRAF = requestAnimationFrame(() => {
+                    resizeRAF = null;
+                    const w = container.clientWidth;
+                    const h = container.clientHeight;
+                    material.uniforms.u_resolution.value.set(w, h);
+                    renderer.setSize(w, h);
+                    if (prefersReducedMotion) renderer.render(scene, camera);
+                });
+            });
+
+            /* ── Project Data ──
+               Default/fallback data, used if data/projects.json can't be
+               fetched (e.g. opening this file directly without a local
+               server). On GitHub Pages (or any local server), the JSON file
+               is loaded instead — edit that file to add/update projects
+               without touching this script. */
+            const defaultProjects = {
+                "distributed-cache": {
+                    name: "Distributed Cache",
+                    year: "2025",
+                    shortDesc:
+                        "In-memory key-value store with consistent hashing and TTL support.",
+                    body:
+                        "A high-performance distributed caching layer built for low-latency workloads. Implements consistent hashing for key distribution across nodes, with automatic failover and TTL-based expiration. Handles 100k+ RPS per node with sub-millisecond p99 latency.",
+                    tech: ["Rust", "Tokio", "gRPC", "Consistent Hashing"],
+                    links: [
+                        {
+                            label: "Source →",
+                            url: "https://github.com/username/distributed-cache",
+                        },
+                    ],
+                },
+                "static-site-generator": {
+                    name: "Static Site Generator",
+                    year: "2024",
+                    shortDesc:
+                        "Zero-dependency build tool that converts Markdown to optimized HTML.",
+                    body:
+                        "A zero-dependency static site generator written in Go. Parses Markdown with front matter, applies reusable templates, and emits minified HTML with automatic asset hashing. Builds a 500-page site in under 100ms.",
+                    tech: ["Go", "Markdown", "HTML"],
+                    links: [
+                        {
+                            label: "Source →",
+                            url: "https://github.com/username/ssg",
+                        },
+                    ],
+                },
+                "terminal-emulator": {
+                    name: "Terminal Emulator",
+                    year: "2024",
+                    shortDesc:
+                        "Web-based terminal with VT100 emulation and WebSocket session support.",
+                    body:
+                        "A browser-based terminal emulator implementing VT100 and a subset of xterm escape sequences. Connects to remote shells via WebSocket with flow control and binary message support. Renders via a custom canvas-based grid for consistent performance.",
+                    tech: ["TypeScript", "Canvas API", "WebSocket", "VT100"],
+                    links: [
+                        {
+                            label: "Source →",
+                            url: "https://github.com/username/terminal",
+                        },
+                        {
+                            label: "Demo →",
+                            url: "https://terminal-demo.example.com",
+                        },
+                    ],
+                },
+                "log-analyzer": {
+                    name: "Log Analyzer",
+                    year: "2023",
+                    shortDesc:
+                        "High-throughput stream processor for structured log aggregation and filtering.",
+                    body:
+                        "A streaming log processor that ingests structured logs from multiple sources, applies real-time filtering and aggregation, and outputs metrics to Prometheus. Uses a custom columnar storage format for fast time-range queries.",
+                    tech: [
+                        "C++",
+                        "Stream Processing",
+                        "Prometheus",
+                        "Columnar Storage",
+                    ],
+                    links: [
+                        {
+                            label: "Source →",
+                            url: "https://github.com/username/log-analyzer",
+                        },
+                    ],
+                },
+            };
+            let projects = defaultProjects;
+
+            const projectsList = document.getElementById("projects-list");
+            const projectsListUl = document.getElementById("projects-list-ul");
+            const projectDetail = document.getElementById("project-detail");
+
+            function buildProjectsList() {
+                projectsListUl.innerHTML = "";
+                Object.entries(projects).forEach(([id, p]) => {
+                    const li = document.createElement("li");
+                    li.className = "project-item";
+                    li.innerHTML = `
+                        ${p.thumbnail ? `<img class="entry-thumb" src="${p.thumbnail}" alt="" loading="lazy">` : ""}
+                        <a onclick="showProjectDetail('${id}')">${p.name}</a>
+                        <div class="project-meta">${p.year} — ${p.tech.join(", ")}</div>
+                        <p class="project-excerpt">${p.shortDesc}</p>
+                    `;
+                    projectsListUl.appendChild(li);
+                });
+            }
+
+            /* ── Writing Data ──
+               Default/fallback data, used if data/writing.json can't be
+               fetched. Edit that file to add/update posts without touching
+               this script. */
+            const defaultWritings = {
+                "zero-dependencies": {
+                    title: "Designing for Zero Dependencies",
+                    meta: "2026 — 12 min read",
+                    body: `Every dependency you add to a project is a liability. Not just in terms of security or maintenance burden, but in cognitive overhead. When you import a library, you are signing up to understand its API, its quirks, its upgrade path, and its transitive dependencies.
+
+This essay explores the philosophy of building software with zero external dependencies. We look at real-world examples where stripping away libraries led to faster builds, smaller binaries, and more predictable behavior.
+
+The key insight is that most of what we need is already there — in the standard library, in the operating system, or in the browser. The hard part is resisting the temptation to reach for a package manager.
+
+### 1. The Supply Chain Trap
+
+Modern software development has normalized pulling in thousands of third-party packages for trivial tasks. Micro-packages introduce attack vectors, audit headaches, and version drift. When you restrict your codebase to standard libraries, your build stays deterministic. You no longer spend hours fixing broken transitive dependencies after a clean install on CI/CD pipelines.
+
+### 2. Performance & Binary Size
+
+Third-party libraries are designed to be generic. They handle edge cases you will never encounter, carry legacy support you will never need, and drag along utility functions that bloat your bundle size. By writing domain-specific implementations tailored precisely to your application's data structures, you often achieve 10x memory savings and drastically reduced execution time.
+
+### 3. Maintainability & Longevity
+
+Code written against standard APIs written 10 years ago still compiles and runs without modification today. Code written against third-party frameworks from 5 years ago is often completely obsolete or requires a ground-up refactor. If longevity matters for your platform, minimizing external churn is the single most effective architectural decision you can make.
+
+### 4. Where to Draw the Line
+
+Zero dependencies is a guiding north star, not a dogmatic jail. Complex domain problems like TLS termination, cryptography primitives, or OS-level device drivers deserve well-audited open-source libraries. But for application logic, UI rendering, string manipulation, and HTTP routing, standard tools are almost always sufficient.
+
+In conclusion, before installing a new package, ask yourself: *Can I write this utility function myself in 10 minutes?* Nine times out of ten, the answer is yes.`,
+                    tags: ["Engineering", "Architecture", "Minimalism"],
+                    excerpt:
+                        "Why removing dependencies often leads to better software.",
+                },
+            };
+            let writings = defaultWritings;
+
+            const writingList = document.getElementById("writing-list");
+            const writingListUl = document.getElementById("writing-list-ul");
+            const writingDetail = document.getElementById("writing-detail");
+
+            function buildWritingList() {
+                writingListUl.innerHTML = "";
+                Object.entries(writings).forEach(([id, w]) => {
+                    const li = document.createElement("li");
+                    li.className = "writing-item";
+                    li.innerHTML = `
+          ${w.thumbnail ? `<img class="entry-thumb" src="${w.thumbnail}" alt="" loading="lazy">` : ""}
+          <a onclick="showWritingDetail('${id}')">${w.title}</a>
+          <div class="writing-meta">${w.meta}</div>
+          <p class="writing-excerpt">${w.excerpt || ""}</p>
+        `;
+                    writingListUl.appendChild(li);
+                });
+            }
+
+            /* ── Navigation Logic ── */
+            const views = {
+                home: document.getElementById("home-view"),
+                about: document.getElementById("about-view"),
+                projects: document.getElementById("projects-view"),
+                writing: document.getElementById("writing-view"),
+            };
+
+            window.navigateTo = function (viewName) {
+                Object.values(views).forEach((v) =>
+                    v.classList.remove("active"),
+                );
+                views[viewName].classList.add("active");
+
+                if (viewName !== "projects") showProjectsList();
+                if (viewName !== "writing") showWritingList();
+
+                if (viewName === "home") {
+                    document.body.classList.add("home-active");
+                    bgDimmer.classList.remove("dim");
+                } else {
+                    document.body.classList.remove("home-active");
+                    bgDimmer.classList.add("dim");
+                }
+
+                window.scrollTo(0, 0);
+                history.pushState(
+                    null,
+                    "",
+                    viewName === "home" ? "/" : `#${viewName}`,
+                );
+            };
+
+            /* ── Project Detail ── */
+            window.showProjectDetail = function (id) {
+                const p = projects[id];
+                if (!p) return;
+                document.getElementById("pd-title").textContent = p.name;
+                document.getElementById("pd-year").textContent = p.year;
+                document.getElementById("pd-desc").innerHTML = marked.parse(
+                    p.body,
+                );
+                document.getElementById("pd-tech").innerHTML = p.tech
+                    .map((t) => `<span>${t}</span>`)
+                    .join("");
+                document.getElementById("pd-links").innerHTML = p.links
+                    .map(
+                        (l) =>
+                            `<a href="${l.url}" target="_blank" rel="noopener">${l.label}</a>`,
+                    )
+                    .join("");
+                projectsList.classList.add("hidden");
+                document.getElementById("projects-top-bar").classList.add("hidden");
+                projectDetail.classList.remove("hidden");
+                projectDetail.scrollTop = 0;
+                history.pushState(null, "", `#project/${id}`);
+            };
+
+            window.showProjectsList = function () {
+                projectDetail.classList.add("hidden");
+                projectsList.classList.remove("hidden");
+                const topBar = document.getElementById("projects-top-bar");
+                if (topBar) topBar.classList.remove("hidden");
+                if (views.projects.classList.contains("active")) {
+                    history.pushState(null, "", "#projects");
+                }
+            };
+
+            /* ── Writing Detail ── */
+            window.showWritingDetail = function (id) {
+                const w = writings[id];
+                if (!w) return;
+                document.getElementById("wd-title").textContent = w.title;
+                document.getElementById("wd-meta").textContent = w.meta;
+                document.getElementById("wd-body").innerHTML = marked.parse(
+                    w.body,
+                );
+                document.getElementById("wd-tags").innerHTML = w.tags
+                    .map((t) => `<span>${t}</span>`)
+                    .join("");
+                writingList.classList.add("hidden");
+                document.getElementById("writing-top-bar").classList.add("hidden");
+                writingDetail.classList.remove("hidden");
+                writingDetail.scrollTop = 0;
+                history.pushState(null, "", `#writing/${id}`);
+            };
+
+            window.showWritingList = function () {
+                writingDetail.classList.add("hidden");
+                writingList.classList.remove("hidden");
+                const topBar = document.getElementById("writing-top-bar");
+                if (topBar) topBar.classList.remove("hidden");
+                if (views.writing.classList.contains("active")) {
+                    history.pushState(null, "", "#writing");
+                }
+            };
+
+            // Handle browser back/forward
+            window.addEventListener("popstate", () => {
+                const hash = window.location.hash;
+                if (!hash || hash === "#") {
+                    navigateTo("home");
+                } else if (hash.startsWith("#project/")) {
+                    const id = hash.replace("#project/", "");
+                    navigateTo("projects");
+                    showProjectDetail(id);
+                } else if (hash.startsWith("#writing/")) {
+                    const id = hash.replace("#writing/", "");
+                    navigateTo("writing");
+                    showWritingDetail(id);
+                } else {
+                    const viewName = hash.replace("#", "");
+                    if (views[viewName]) navigateTo(viewName);
+                }
+            });
+
+            // ── Markdown entry loading ──
+            //
+            // Each project/writing entry lives in its own .md file under
+            // data/<kind>/<slug>.md, with a small frontmatter block for
+            // metadata followed by the Markdown body:
+            //
+            //   ---
+            //   name: My Project
+            //   year: 2026
+            //   shortDesc: One-line summary.
+            //   thumbnail: media/my-project/thumb.jpg
+            //   tech: Rust, Tokio, gRPC
+            //   link: Source → | https://github.com/you/my-project
+            //   link: Demo → | https://demo.example.com
+            //   ---
+            //
+            //   The rest of the file is plain Markdown.
+            //
+            // data/<kind>/index.json lists which slugs to load and in what
+            // order, e.g. ["my-project", "another-project"].
+
+            function parseFrontmatter(raw) {
+                const match = raw.match(
+                    /^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/,
+                );
+                if (!match) return { meta: {}, body: raw.trim() };
+                const [, fmBlock, body] = match;
+                const meta = {};
+                const links = [];
+                fmBlock.split("\n").forEach((line) => {
+                    if (!line.trim()) return;
+                    const linkMatch = line.match(/^link:\s*(.*)$/i);
+                    if (linkMatch) {
+                        const [label, url] = linkMatch[1]
+                            .split("|")
+                            .map((s) => s.trim());
+                        if (label && url) links.push({ label, url });
+                        return;
+                    }
+                    const kv = line.match(/^([a-zA-Z]+):\s?(.*)$/);
+                    if (kv) meta[kv[1].trim()] = kv[2].trim();
+                });
+                if (links.length) meta.links = links;
+                if (meta.tech)
+                    meta.tech = meta.tech
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean);
+                if (meta.tags)
+                    meta.tags = meta.tags
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean);
+                return { meta, body: body.trim() };
+            }
+
+            // Loads every entry for a given kind ("projects" or "writing").
+            // Returns null (signalling "use the built-in defaults") if the
+            // index/manifest can't be fetched at all — e.g. running via
+            // file:// with no local server.
+            async function loadMarkdownEntries(kind) {
+                let slugs;
+                try {
+                    const idxRes = await fetch(`data/${kind}/index.json`);
+                    if (!idxRes.ok) return null;
+                    slugs = await idxRes.json();
+                } catch (e) {
+                    console.info(
+                        `Using built-in ${kind} data — data/${kind}/index.json wasn't reachable (serve this folder over http:// to load it, e.g. \`python3 -m http.server\`).`,
+                    );
+                    return null;
+                }
+
+                const result = {};
+                for (const slug of slugs) {
+                    try {
+                        const res = await fetch(`data/${kind}/${slug}.md`);
+                        if (!res.ok) continue;
+                        const raw = await res.text();
+                        const { meta, body } = parseFrontmatter(raw);
+                        result[slug] = { ...meta, body };
+                    } catch (e) {
+                        console.warn(
+                            `Skipping data/${kind}/${slug}.md — couldn't load or parse it.`,
+                            e,
+                        );
+                    }
+                }
+                return result;
+            }
+
+            async function loadContentData() {
+                const loadedProjects = await loadMarkdownEntries("projects");
+                if (loadedProjects) projects = loadedProjects;
+                const loadedWritings = await loadMarkdownEntries("writing");
+                if (loadedWritings) writings = loadedWritings;
+            }
+
+            (async function init() {
+                await loadContentData();
+                buildProjectsList();
+                buildWritingList();
+
+                const initialHash = window.location.hash;
+                if (!initialHash || initialHash === "#") {
+                    navigateTo("home");
+                } else if (initialHash.startsWith("#project/")) {
+                    const id = initialHash.replace("#project/", "");
+                    navigateTo("projects");
+                    showProjectDetail(id);
+                } else if (initialHash.startsWith("#writing/")) {
+                    const id = initialHash.replace("#writing/", "");
+                    navigateTo("writing");
+                    showWritingDetail(id);
+                } else {
+                    const viewName = initialHash.replace("#", "");
+                    if (views[viewName]) navigateTo(viewName);
+                }
+            })();
+        </script>
+    </body>
+</html>
